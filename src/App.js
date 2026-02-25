@@ -4,7 +4,7 @@ import { useState, useRef, useEffect } from "react";
 // 🔑 PASTE YOUR ANTHROPIC API KEY BELOW (between the quotes)
 // Get it free at: https://console.anthropic.com
 // ============================================================
-const ANTHROPIC_API_KEY = "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";
+const ANTHROPIC_API_KEY = process.env.REACT_APP_ANTHROPIC_KEY;
 // ============================================================
 
 const SYSTEM_PROMPT = `You are an expert Pabbly Connect automation specialist. You help users build workflows for ANY of the 2000+ apps supported by Pabbly Connect.
