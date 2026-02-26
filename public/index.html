@@ -1,32 +1,444 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Pabbly Copilot — AI Workflow Builder</title>
-  </head>
-  <body>
-    <div id="root"></div>
-  </body>
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Pabbly Copilot — AI Workflow Builder</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0d14; --surface: #111520; --surface2: #161c2d;
+    --border: #1e2740; --accent: #4f6ef7; --accent2: #7c3aed;
+    --green: #10b981; --orange: #f59e0b; --text: #e8eaf6; --muted: #6b7a9e;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { font-family:'DM Sans',sans-serif; background:var(--bg); color:var(--text); height:100vh; overflow:hidden; display:flex; flex-direction:column; }
+  header { display:flex; align-items:center; justify-content:space-between; padding:12px 24px; border-bottom:1px solid var(--border); background:rgba(10,13,20,0.95); flex-shrink:0; }
+  .logo { display:flex; align-items:center; gap:10px; font-family:'Syne',sans-serif; font-weight:800; font-size:1.1rem; }
+  .logo-icon { width:32px; height:32px; background:linear-gradient(135deg,var(--accent),var(--accent2)); border-radius:8px; display:flex; align-items:center; justify-content:center; font-size:15px; }
+  .badge { background:linear-gradient(135deg,var(--accent),var(--accent2)); color:#fff; font-size:0.6rem; padding:2px 7px; border-radius:20px; font-weight:700; }
+  .btn { padding:6px 14px; border-radius:7px; font-size:0.78rem; font-weight:500; cursor:pointer; border:none; font-family:inherit; text-decoration:none; display:inline-flex; align-items:center; gap:5px; }
+  .btn-primary { background:linear-gradient(135deg,var(--accent),var(--accent2)); color:#fff; }
+  .btn-ghost { background:transparent; color:var(--muted); border:1px solid var(--border); }
+  .btn-ghost:hover { color:var(--text); border-color:var(--accent); }
+  .layout { display:flex; flex:1; overflow:hidden; }
+  .sidebar { width:210px; border-right:1px solid var(--border); overflow-y:auto; padding:12px 0; flex-shrink:0; }
+  .sidebar-label { font-size:0.6rem; font-weight:700; color:var(--muted); letter-spacing:0.1em; text-transform:uppercase; padding:6px 14px; }
+  .sidebar-item { display:flex; align-items:center; gap:8px; padding:7px 14px; cursor:pointer; font-size:0.78rem; color:var(--muted); transition:all 0.15s; }
+  .sidebar-item:hover { background:var(--surface2); color:var(--text); }
+  .divider { height:1px; background:var(--border); margin:8px 12px; }
+  .main { flex:1; display:flex; flex-direction:column; overflow:hidden; }
+  .chat { flex:1; overflow-y:auto; padding:20px 28px; display:flex; flex-direction:column; gap:16px; }
+  .hero { text-align:center; padding:24px 16px; }
+  .hero h1 { font-family:'Syne',sans-serif; font-weight:800; font-size:2rem; line-height:1.2; background:linear-gradient(135deg,#e8eaf6,#4f6ef7,#7c3aed); -webkit-background-clip:text; -webkit-text-fill-color:transparent; margin-bottom:10px; }
+  .hero p { color:var(--muted); font-size:0.88rem; margin-bottom:20px; }
+  .grid { display:grid; grid-template-columns:1fr 1fr; gap:10px; max-width:560px; margin:0 auto; }
+  .card { background:var(--surface); border:1px solid var(--border); border-radius:12px; padding:13px; cursor:pointer; text-align:left; transition:all 0.2s; }
+  .card:hover { border-color:var(--accent); background:var(--surface2); transform:translateY(-2px); }
+  .card-icon { font-size:1.2rem; margin-bottom:5px; }
+  .card-title { font-size:0.82rem; font-weight:600; margin-bottom:2px; }
+  .card-desc { font-size:0.72rem; color:var(--muted); }
+  .msg { display:flex; gap:10px; animation:fadeUp 0.3s ease; }
+  .msg.user { flex-direction:row-reverse; }
+  @keyframes fadeUp { from{opacity:0;transform:translateY(10px)} to{opacity:1;transform:translateY(0)} }
+  .avatar { width:30px; height:30px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:13px; flex-shrink:0; }
+  .avatar.ai { background:linear-gradient(135deg,var(--accent),var(--accent2)); }
+  .avatar.user { background:var(--surface2); border:1px solid var(--border); }
+  .bubble { max-width:78%; background:var(--surface); border:1px solid var(--border); border-radius:14px; padding:12px 15px; font-size:0.86rem; line-height:1.6; }
+  .msg.user .bubble { background:linear-gradient(135deg,rgba(79,110,247,0.15),rgba(124,58,237,0.1)); border-color:rgba(79,110,247,0.3); }
+  .error-bubble { background:rgba(239,68,68,0.08); border:1px solid rgba(239,68,68,0.25); border-radius:12px; padding:13px 16px; font-size:0.84rem; color:#fca5a5; max-width:78%; }
+  .wf-card { background:var(--surface); border:1px solid var(--border); border-radius:14px; overflow:hidden; width:100%; }
+  .wf-head { padding:12px 16px; border-bottom:1px solid var(--border); display:flex; align-items:center; justify-content:space-between; background:linear-gradient(135deg,rgba(79,110,247,0.06),rgba(124,58,237,0.04)); }
+  .wf-title { font-family:'Syne',sans-serif; font-weight:700; font-size:0.9rem; }
+  .wf-sub { font-size:0.72rem; color:var(--muted); margin-top:2px; }
+  .wf-btns { display:flex; gap:6px; }
+  .wf-btn { padding:4px 10px; border-radius:6px; font-size:0.7rem; font-weight:500; cursor:pointer; border:none; font-family:inherit; }
+  .wf-btn.copy { background:var(--surface2); color:var(--muted); border:1px solid var(--border); }
+  .wf-btn.export { background:linear-gradient(135deg,var(--accent),var(--accent2)); color:#fff; }
+  .steps { padding:14px; }
+  .step { display:flex; gap:11px; background:var(--bg); border:1px solid var(--border); border-radius:10px; padding:12px; margin-bottom:8px; position:relative; }
+  .step:last-child { margin-bottom:0; }
+  .step-conn { position:absolute; left:23px; top:100%; width:2px; height:8px; background:linear-gradient(var(--accent),transparent); }
+  .step:last-child .step-conn { display:none; }
+  .step-num { width:28px; height:28px; border-radius:7px; display:flex; align-items:center; justify-content:center; font-size:0.7rem; font-weight:700; flex-shrink:0; }
+  .step-num.trigger { background:rgba(16,185,129,0.12); color:var(--green); border:1px solid rgba(16,185,129,0.3); }
+  .step-num.action { background:rgba(79,110,247,0.1); color:var(--accent); border:1px solid rgba(79,110,247,0.25); }
+  .step-num.condition { background:rgba(245,158,11,0.12); color:var(--orange); border:1px solid rgba(245,158,11,0.25); }
+  .step-body { flex:1; }
+  .step-app { font-size:0.67rem; color:var(--muted); text-transform:uppercase; letter-spacing:0.08em; margin-bottom:2px; }
+  .step-badge { font-size:0.6rem; font-weight:600; padding:1px 6px; border-radius:10px; margin-left:4px; }
+  .step-badge.trigger { background:rgba(16,185,129,0.12); color:var(--green); }
+  .step-badge.action { background:rgba(79,110,247,0.1); color:var(--accent); }
+  .step-badge.condition { background:rgba(245,158,11,0.12); color:var(--orange); }
+  .step-event { font-weight:600; font-size:0.84rem; margin-bottom:3px; }
+  .step-desc { font-size:0.75rem; color:#9ca3c9; line-height:1.4; }
+  .step-setup { font-size:0.72rem; color:#7c8db5; font-style:italic; margin-top:5px; line-height:1.4; }
+  .step-fields { font-size:0.71rem; color:var(--muted); margin-top:4px; }
+  .tips-section { padding:10px 14px; border-top:1px solid var(--border); }
+  .tips-label { font-size:0.67rem; color:var(--muted); font-weight:600; text-transform:uppercase; letter-spacing:0.08em; margin-bottom:5px; }
+  .tip { font-size:0.73rem; color:var(--muted); margin-bottom:3px; }
+  .thinking { display:flex; align-items:center; gap:8px; color:var(--muted); font-size:0.82rem; }
+  .dots span { display:inline-block; width:6px; height:6px; border-radius:50%; background:var(--accent); margin:0 2px; animation:bounce 1.2s infinite; }
+  .dots span:nth-child(2){animation-delay:0.2s} .dots span:nth-child(3){animation-delay:0.4s}
+  @keyframes bounce{0%,80%,100%{transform:scale(0.5);opacity:0.3}40%{transform:scale(1);opacity:1}}
+  .input-area { padding:12px 28px 16px; border-top:1px solid var(--border); background:rgba(10,13,20,0.9); flex-shrink:0; }
+  .input-box { background:var(--surface); border:1px solid var(--border); border-radius:12px; overflow:hidden; transition:border-color 0.2s; }
+  .input-box:focus-within { border-color:var(--accent); }
+  textarea { width:100%; padding:13px 15px; background:transparent; border:none; outline:none; color:var(--text); font-family:inherit; font-size:0.88rem; resize:none; line-height:1.5; min-height:50px; max-height:120px; }
+  .input-footer { display:flex; align-items:center; justify-content:space-between; padding:5px 10px 8px; }
+  .chips { display:flex; gap:6px; flex-wrap:wrap; }
+  .chip { font-size:0.69rem; color:var(--muted); background:var(--bg); border:1px solid var(--border); padding:3px 9px; border-radius:20px; cursor:pointer; }
+  .chip:hover { color:var(--text); border-color:var(--accent); }
+  .send { width:34px; height:34px; border-radius:8px; background:linear-gradient(135deg,var(--accent),var(--accent2)); border:none; color:#fff; cursor:pointer; font-size:14px; flex-shrink:0; transition:all 0.2s; }
+  .send:disabled { opacity:0.4; cursor:not-allowed; }
+  .send:not(:disabled):hover { opacity:0.85; transform:scale(1.05); }
+  .right { width:210px; border-left:1px solid var(--border); padding:14px 12px; overflow-y:auto; flex-shrink:0; }
+  .panel-title { font-family:'Syne',sans-serif; font-weight:700; font-size:0.8rem; margin-bottom:10px; }
+  .stat-card { background:var(--surface); border:1px solid var(--border); border-radius:10px; padding:12px; margin-bottom:10px; }
+  .stat-row { display:flex; justify-content:space-between; padding:4px 0; border-bottom:1px solid var(--border); font-size:0.73rem; }
+  .stat-row:last-child { border-bottom:none; }
+  .stat-val { color:var(--accent); font-weight:600; }
+  .app-pills { display:flex; flex-wrap:wrap; margin-bottom:10px; }
+  .pill { display:inline-flex; align-items:center; background:var(--surface2); border:1px solid var(--border); border-radius:20px; padding:2px 8px; margin:2px; font-size:0.67rem; color:var(--muted); cursor:pointer; }
+  .pill:hover { color:var(--text); border-color:var(--accent); }
+  .info-card { background:var(--surface); border:1px solid var(--border); border-radius:10px; padding:11px; font-size:0.7rem; color:var(--muted); line-height:1.7; }
+  .toast { position:fixed; bottom:24px; right:24px; background:var(--green); color:#fff; padding:9px 16px; border-radius:9px; font-size:0.83rem; z-index:999; transform:translateY(60px); opacity:0; transition:all 0.3s; pointer-events:none; }
+  .toast.show { transform:translateY(0); opacity:1; }
+  ::-webkit-scrollbar{width:5px} ::-webkit-scrollbar-track{background:var(--bg)} ::-webkit-scrollbar-thumb{background:var(--border);border-radius:4px}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">
+    <div class="logo-icon">⚡</div>
+    Pabbly Copilot
+    <span class="badge">AI POWERED</span>
+  </div>
+  <div style="display:flex;gap:8px;align-items:center">
+    <button class="btn btn-ghost" onclick="clearChat()">🗑️ Clear</button>
+    <a href="https://connect.pabbly.com" target="_blank" class="btn btn-primary">🚀 Open Pabbly</a>
+  </div>
+</header>
+
+<div class="layout">
+  <!-- SIDEBAR -->
+  <div class="sidebar">
+    <div class="sidebar-label">Quick Triggers</div>
+    <div class="sidebar-item" onclick="ask('When new order placed on WooCommerce, build complete Pabbly workflow')">🛍️ WooCommerce Order</div>
+    <div class="sidebar-item" onclick="ask('When new Facebook Lead Ad submitted, build complete Pabbly workflow')">📣 Facebook Lead</div>
+    <div class="sidebar-item" onclick="ask('When payment received on Razorpay, build complete Pabbly workflow')">⚡ Razorpay Payment</div>
+    <div class="sidebar-item" onclick="ask('When new row added to Google Sheets, build complete Pabbly workflow')">📊 Google Sheets Row</div>
+    <div class="sidebar-item" onclick="ask('When Typeform form submitted, build complete Pabbly workflow')">📝 Typeform Submit</div>
+    <div class="sidebar-item" onclick="ask('When appointment booked on Calendly, build complete Pabbly workflow')">📅 Calendly Booking</div>
+    <div class="sidebar-item" onclick="ask('When payment received on Stripe, build complete Pabbly workflow')">💳 Stripe Payment</div>
+    <div class="sidebar-item" onclick="ask('When new email received in Gmail, build complete Pabbly workflow')">📧 Gmail Received</div>
+    <div class="divider"></div>
+    <div class="sidebar-label">Quick Actions</div>
+    <div class="sidebar-item" onclick="appendInput('send WhatsApp message')">💬 Send WhatsApp</div>
+    <div class="sidebar-item" onclick="appendInput('send Gmail email')">📧 Send Gmail</div>
+    <div class="sidebar-item" onclick="appendInput('add row to Google Sheets')">📊 Add to Sheets</div>
+    <div class="sidebar-item" onclick="appendInput('send Telegram message')">📱 Send Telegram</div>
+    <div class="sidebar-item" onclick="appendInput('send Twilio SMS')">📞 Twilio SMS</div>
+    <div class="sidebar-item" onclick="appendInput('send Slack message')">🔔 Slack Message</div>
+    <div class="sidebar-item" onclick="appendInput('process with OpenAI')">🤖 OpenAI Process</div>
+    <div class="sidebar-item" onclick="appendInput('create Notion page')">🗂️ Notion Page</div>
+    <div class="divider"></div>
+    <div class="sidebar-label" id="recentLabel" style="display:none">Recent</div>
+    <div id="recentList"></div>
+  </div>
+
+  <!-- MAIN -->
+  <div class="main">
+    <div class="chat" id="chat">
+      <div class="hero" id="hero">
+        <h1>Build Any Pabbly Workflow<br>with Plain English</h1>
+        <p>Supports all 2000+ Pabbly Connect apps. Describe your automation and get the full workflow instantly.</p>
+        <div class="grid">
+          <div class="card" onclick="ask('When a new order is placed on WooCommerce, add customer to Google Sheets and send WhatsApp confirmation')">
+            <div class="card-icon">🛒</div>
+            <div class="card-title">WooCommerce → Sheets + WhatsApp</div>
+            <div class="card-desc">Track orders, notify customers</div>
+          </div>
+          <div class="card" onclick="ask('When Facebook Lead Ad submitted, add to Google Sheets, send welcome Gmail, add to HubSpot CRM')">
+            <div class="card-icon">📣</div>
+            <div class="card-title">FB Leads → Gmail + HubSpot</div>
+            <div class="card-desc">Capture leads, follow up instantly</div>
+          </div>
+          <div class="card" onclick="ask('When Razorpay payment received, send thank you SMS via Twilio and add to Google Sheets')">
+            <div class="card-icon">💰</div>
+            <div class="card-title">Razorpay → SMS + Sheets</div>
+            <div class="card-desc">Automate payment confirmations</div>
+          </div>
+          <div class="card" onclick="ask('When Facebook Messenger receives a message, use Vapi to generate response and reply back')">
+            <div class="card-icon">💬</div>
+            <div class="card-title">FB Messenger → Vapi Reply</div>
+            <div class="card-desc">AI-powered message responses</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="input-area">
+      <div class="input-box">
+        <textarea id="inp" placeholder="Describe your automation... e.g. 'WooCommerce order → WhatsApp + Sheets' or 'FB Messenger → Vapi response'" rows="2" onkeydown="handleKey(event)" oninput="resize(this)"></textarea>
+        <div class="input-footer">
+          <div class="chips">
+            <span class="chip" onclick="setInput('WooCommerce order → WhatsApp + Sheets')">🛒 Orders</span>
+            <span class="chip" onclick="setInput('Facebook leads → Gmail + CRM')">📣 Leads</span>
+            <span class="chip" onclick="setInput('Razorpay payment → SMS confirmation')">💰 Payments</span>
+            <span class="chip" onclick="setInput('Calendly booking → reminder email')">📅 Bookings</span>
+          </div>
+          <button class="send" id="sendBtn" onclick="send()">➤</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- RIGHT PANEL -->
+  <div class="right">
+    <div class="panel-title">📊 Stats</div>
+    <div class="stat-card">
+      <div class="stat-row"><span>Steps</span><span class="stat-val" id="sSteps">—</span></div>
+      <div class="stat-row"><span>Trigger</span><span class="stat-val" id="sTrigger">—</span></div>
+      <div class="stat-row"><span>Actions</span><span class="stat-val" id="sActions">—</span></div>
+      <div class="stat-row"><span>Setup</span><span class="stat-val" id="sSetup">—</span></div>
+      <div class="stat-row"><span>Level</span><span class="stat-val" id="sLevel">—</span></div>
+    </div>
+    <div class="panel-title">⚡ Popular Apps</div>
+    <div class="app-pills">
+      <span class="pill" onclick="appendInput('Gmail')">📧 Gmail</span>
+      <span class="pill" onclick="appendInput('Google Sheets')">📊 Sheets</span>
+      <span class="pill" onclick="appendInput('WooCommerce')">🛍️ WooCommerce</span>
+      <span class="pill" onclick="appendInput('WhatsApp')">💬 WhatsApp</span>
+      <span class="pill" onclick="appendInput('Telegram')">📱 Telegram</span>
+      <span class="pill" onclick="appendInput('Razorpay')">⚡ Razorpay</span>
+      <span class="pill" onclick="appendInput('Airtable')">📋 Airtable</span>
+      <span class="pill" onclick="appendInput('Notion')">🗂️ Notion</span>
+      <span class="pill" onclick="appendInput('Twilio')">📞 Twilio</span>
+      <span class="pill" onclick="appendInput('Shopify')">🛒 Shopify</span>
+      <span class="pill" onclick="appendInput('HubSpot')">💼 HubSpot</span>
+      <span class="pill" onclick="appendInput('Slack')">🔔 Slack</span>
+      <span class="pill" onclick="appendInput('Stripe')">💳 Stripe</span>
+      <span class="pill" onclick="appendInput('Vapi')">🎙️ Vapi</span>
+      <span class="pill" onclick="appendInput('OpenAI')">🤖 OpenAI</span>
+      <span class="pill" onclick="appendInput('Discord')">📢 Discord</span>
+      <span class="pill" onclick="appendInput('Zoom')">🎥 Zoom</span>
+      <span class="pill" onclick="appendInput('Mailchimp')">🎯 Mailchimp</span>
+      <span class="pill" onclick="appendInput('Typeform')">📝 Typeform</span>
+      <span class="pill" onclick="appendInput('Calendly')">📅 Calendly</span>
+    </div>
+    <div class="info-card">
+      <strong style="color:var(--text)">💡 Tips</strong><br>
+      ✅ Name exact apps<br>
+      ✅ Describe the trigger<br>
+      ✅ List all actions<br>
+      ✅ Add conditions if any<br>
+      ✅ Any 2000+ app works
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast">✓ Copied!</div>
+
+<script>
+const SYSTEM = `You are an expert Pabbly Connect automation specialist supporting all 2000+ apps.
+Respond ONLY with a valid JSON object, no markdown, no backticks, no extra text:
+{
+  "summary": "one line summary",
+  "workflow_name": "short name",
+  "trigger_app": "app name",
+  "estimated_setup_minutes": 15,
+  "difficulty": "Easy",
+  "steps": [
+    {
+      "step_number": 1,
+      "type": "trigger",
+      "app": "App Name",
+      "event": "Event Name",
+      "description": "What this does",
+      "setup_notes": "In Pabbly Connect: 1) step 2) step 3) step",
+      "fields": ["field: description"]
+    }
+  ],
+  "pabbly_tips": ["tip1","tip2"]
+}
+Rules: exactly 1 trigger, rest are action or condition, beginner-friendly setup_notes, return ONLY JSON`;
+
+let history = [];
+let loading = false;
+
+function emoji(app=''){
+  const a=app.toLowerCase();
+  if(a.includes('gmail')||a.includes('email'))return'📧';
+  if(a.includes('sheet'))return'📊';
+  if(a.includes('woocommerce'))return'🛍️';
+  if(a.includes('messenger'))return'💬';
+  if(a.includes('facebook')||a.includes('fb'))return'📣';
+  if(a.includes('whatsapp')||a.includes('wati'))return'💬';
+  if(a.includes('telegram'))return'📱';
+  if(a.includes('razorpay'))return'⚡';
+  if(a.includes('airtable'))return'📋';
+  if(a.includes('notion'))return'🗂️';
+  if(a.includes('twilio')||a.includes('sms'))return'📞';
+  if(a.includes('shopify'))return'🛒';
+  if(a.includes('stripe'))return'💳';
+  if(a.includes('slack'))return'🔔';
+  if(a.includes('hubspot'))return'💼';
+  if(a.includes('mailchimp'))return'🎯';
+  if(a.includes('typeform')||a.includes('form'))return'📝';
+  if(a.includes('calendly'))return'📅';
+  if(a.includes('vapi')||a.includes('voice'))return'🎙️';
+  if(a.includes('openai')||a.includes('gpt')||a.includes('ai'))return'🤖';
+  if(a.includes('discord'))return'📢';
+  if(a.includes('zoom'))return'🎥';
+  if(a.includes('paypal'))return'💰';
+  if(a.includes('google'))return'🔷';
+  if(a.includes('formatter')||a.includes('filter'))return'🔧';
+  if(a.includes('delay'))return'⏰';
+  return'⚙️';
+}
+
+async function callAPI(messages){
+  const res = await fetch('/api/chat', {
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({
+      model:'claude-sonnet-4-20250514',
+      max_tokens:1000,
+      system: SYSTEM,
+      messages: messages
+    })
+  });
+  if(!res.ok){
+    const e = await res.json().catch(()=>({}));
+    throw new Error(e.error || `Server error ${res.status}`);
+  }
+  const data = await res.json();
+  const text = data.content.filter(b=>b.type==='text').map(b=>b.text).join('');
+  const clean = text.replace(/^```json\s*/i,'').replace(/^```\s*/i,'').replace(/\s*```\s*$/i,'').trim();
+  const s=clean.indexOf('{'), e=clean.lastIndexOf('}');
+  if(s===-1)throw new Error('No workflow generated');
+  return JSON.parse(clean.slice(s,e+1));
+}
+
+function addMsg(html, cls=''){
+  document.getElementById('hero')?.remove();
+  const chat = document.getElementById('chat');
+  const d = document.createElement('div');
+  d.className = 'msg ' + cls;
+  d.innerHTML = html;
+  chat.appendChild(d);
+  chat.scrollTop = chat.scrollHeight;
+  return d;
+}
+
+function thinking(){
+  return addMsg(`<div class="avatar ai">⚡</div><div class="thinking"><div class="dots"><span></span><span></span><span></span></div>Building your Pabbly workflow...</div>`,'', 'thinkingMsg');
+}
+
+function renderWF(wf){
+  document.getElementById('sSteps').textContent = wf.steps.length;
+  document.getElementById('sTrigger').textContent = wf.trigger_app||wf.steps[0]?.app||'—';
+  document.getElementById('sActions').textContent = wf.steps.filter(s=>s.type==='action').length;
+  document.getElementById('sSetup').textContent = (wf.estimated_setup_minutes||15)+' min';
+  document.getElementById('sLevel').textContent = wf.difficulty||'Medium';
+
+  // Add to recent
+  const rl = document.getElementById('recentList');
+  const rlabel = document.getElementById('recentLabel');
+  rlabel.style.display='block';
+  const existing = Array.from(rl.children).map(c=>c.textContent);
+  if(!existing.includes(wf.workflow_name)){
+    const d=document.createElement('div');
+    d.className='sidebar-item';
+    d.style.fontSize='0.74rem';
+    d.innerHTML=`<span style="width:5px;height:5px;border-radius:50%;background:var(--accent);flex-shrink:0;display:block"></span>${wf.workflow_name}`;
+    rl.prepend(d);
+    if(rl.children.length>4) rl.lastChild.remove();
+  }
+
+  const stepsHTML = wf.steps.map((s,i)=>{
+    const tc = s.type==='trigger'?'trigger':s.type==='condition'?'condition':'action';
+    return `<div class="step">
+      <div class="step-num ${tc}">${s.type==='trigger'?'▶':s.step_number}</div>
+      <div class="step-body">
+        <div class="step-app">${emoji(s.app)} ${s.app}<span class="step-badge ${tc}">${s.type}</span></div>
+        <div class="step-event">${s.event}</div>
+        <div class="step-desc">${s.description}</div>
+        ${s.setup_notes?`<div class="step-setup">🛠️ ${s.setup_notes}</div>`:''}
+        ${s.fields?.length?`<div class="step-fields"><span style="color:var(--accent)">📌 </span>${s.fields.join(' · ')}</div>`:''}
+      </div>
+      ${i<wf.steps.length-1?'<div class="step-conn"></div>':''}
+    </div>`;
+  }).join('');
+
+  const tipsHTML = wf.pabbly_tips?.length
+    ? `<div class="tips-section"><div class="tips-label">💡 Setup Tips</div>${wf.pabbly_tips.map(t=>`<div class="tip">• ${t}</div>`).join('')}</div>`:'';
+
+  const safe = JSON.stringify(wf).replace(/\\/g,'\\\\').replace(/`/g,'\\`');
+  const textSafe = buildText(wf).replace(/\\/g,'\\\\').replace(/`/g,'\\`');
+
+  return `<div class="avatar ai">⚡</div>
+  <div style="flex:1;min-width:0">
+    <div class="bubble" style="max-width:100%;margin-bottom:10px">✅ <strong>${wf.workflow_name}</strong> — ${wf.steps.length} steps · ~${wf.estimated_setup_minutes}min · <span style="color:var(--orange)">${wf.difficulty}</span></div>
+    <div class="wf-card">
+      <div class="wf-head">
+        <div><div class="wf-title">⚡ ${wf.workflow_name}</div><div class="wf-sub">${wf.summary}</div></div>
+        <div class="wf-btns">
+          <button class="wf-btn copy" onclick="copy(\`${safe}\`)">📋 Copy</button>
+          <button class="wf-btn export" onclick="download(\`${textSafe}\`,\`${wf.workflow_name.replace(/\s+/g,'_')}\`)">⬇️ Export</button>
+        </div>
+      </div>
+      <div class="steps">${stepsHTML}</div>
+      ${tipsHTML}
+    </div>
+  </div>`;
+}
+
+function buildText(wf){
+  let t=`PABBLY CONNECT WORKFLOW\n${'='.repeat(40)}\nName: ${wf.workflow_name}\nSummary: ${wf.summary}\nSetup: ~${wf.estimated_setup_minutes}min | ${wf.difficulty}\n\nSTEPS:\n`;
+  wf.steps.forEach((s,i)=>{
+    t+=`\n${i+1}. [${s.type.toUpperCase()}] ${s.app} — ${s.event}\n${s.description}\nSetup: ${s.setup_notes}\n`;
+    if(s.fields?.length) t+=`Fields: ${s.fields.join(', ')}\n`;
+  });
+  if(wf.pabbly_tips?.length){t+=`\nTIPS:\n`;wf.pabbly_tips.forEach(tip=>t+=`• ${tip}\n`);}
+  return t;
+}
+
+async function send(text){
+  const inp = document.getElementById('inp');
+  const msg = (text||inp.value).trim();
+  if(!msg||loading) return;
+  inp.value=''; resize(inp); loading=true;
+  document.getElementById('sendBtn').disabled=true;
+
+  history.push({role:'user',content:msg});
+  addMsg(`<div class="avatar user">👤</div><div class="bubble">${msg}</div>`,'user');
+  const th = thinking();
+
+  try {
+    const wf = await callAPI(history);
+    th.remove();
+    history.push({role:'assistant',content:JSON.stringify(wf)});
+    if(history.length>12) history=history.slice(-12);
+    addMsg(renderWF(wf));
+  } catch(err){
+    th.remove();
+    addMsg(`<div class="avatar ai">⚡</div><div class="error-bubble">⚠️ <strong>${err.message}</strong><br><br>Try: "When [App] gets [event], then [App] does [action]"</div>`);
+  }
+  loading=false;
+  document.getElementById('sendBtn').disabled=false;
+}
+
+function handleKey(e){ if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();send();} }
+function resize(el){ el.style.height='auto'; el.style.height=Math.min(el.scrollHeight,120)+'px'; }
+function ask(t){ send(t); }
+function setInput(t){ document.getElementById('inp').value=t; document.getElementById('inp').focus(); }
+function appendInput(t){ const i=document.getElementById('inp'); i.value=(i.value?i.value+' and ':'')+t; i.focus(); }
+function clearChat(){ document.getElementById('chat').innerHTML=`<div class="hero" id="hero"><h1>Build Any Pabbly Workflow<br>with Plain English</h1><p>Supports all 2000+ Pabbly Connect apps.</p></div>`; history=[]; }
+function copy(t){ navigator.clipboard.writeText(t).catch(()=>{}); const toast=document.getElementById('toast'); toast.classList.add('show'); setTimeout(()=>toast.classList.remove('show'),2000); }
+function download(content,name){ const b=new Blob([content],{type:'text/plain'}); const u=URL.createObjectURL(b); const a=document.createElement('a'); a.href=u; a.download=name+'_pabbly.txt'; a.click(); URL.revokeObjectURL(u); }
+</script>
+</body>
 </html>
-```
-
----
-
-### Step 5 — Add API Key to App.js
-
-When creating `src/App.js`, find this line and add your key:
-```
-const ANTHROPIC_API_KEY = "YOUR_API_KEY_HERE";
-```
-Replace with your real key from **console.anthropic.com**
-
----
-
-## After all 3 files are added, your repo should show:
-```
-📄 README.md ✅ already there
-📄 package.json ✅ already there  
-📁 src/App.js 👈 need to add
-📁 src/index.js 👈 need to add
-📁 public/index.html 👈 need to add
